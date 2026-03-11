@@ -5,10 +5,99 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// --- ENUMS ---
+
+enum Role {
+  USER
+  ORGANIZER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+// --- MODELS ---
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  role       Role     @default(USER)
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  // Relações
+  events     Event[]  // Eventos que este usuário organizou
+  orders     Order[]  // Compras que este usuário fez
+
+  @@map("users")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  date        DateTime
+  location    String
+  image       String?
+  organizerId String   @map("organizer_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relações
+  organizer   User     @relation(fields: [organizerId], references: [id])
+  tickets     Ticket[]
+
+  @@map("events")
+}
+
+model Ticket {
+  id        String   @id @default(cuid())
+  eventId   String   @map("event_id")
+  name      String   // Ex: Pista, VIP, Camarote
+  price     Decimal  @db.Decimal(10, 2)
+  quantity  Int      // Quantidade total disponível
+
+  // Relações
+  event     Event    @relation(fields: [eventId], references: [id])
+  orderTickets OrderTicket[]
+
+  @@map("tickets")
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  userId     String      @map("user_id")
+  totalPrice Decimal     @db.Decimal(10, 2) @map("total_price")
+  status     OrderStatus @default(PENDING)
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  // Relações
+  user       User        @relation(fields: [userId], references: [id])
+  orderTickets OrderTicket[]
+
+  @@map("orders")
+}
+
+model OrderTicket {
+  id        String  @id @default(cuid())
+  orderId   String  @map("order_id")
+  ticketId  String  @map("ticket_id")
+  qrCode    String  @unique @map("qr_code")
+
+  // Relações
+  order     Order   @relation(fields: [orderId], references: [id])
+  ticket    Ticket  @relation(fields: [ticketId], references: [id])
+
+  @@map("order_tickets")
 }

@@ -6,7 +6,7 @@ npm-debug.log*
 # Dependency directories
 node_modules/
 
-# Environment variables (CRÍTICO)
+# Environment variables
 .env
 .env.local
 .env.*.local
@@ -18,7 +18,7 @@ node_modules/
 .vscode/
 .idea/
 *.swp
-*.swo
+*.swo 
 
 # OS files
 .DS_Store
