@@ -53,6 +53,7 @@ model Event {
   image       String?
   organizerId String   @map("organizer_id")
   createdAt   DateTime @default(now()) @map("created_at")
+  slug        String   @unique
 
   // Relações
   organizer   User     @relation(fields: [organizerId], references: [id])
