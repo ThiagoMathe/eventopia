@@ -21,6 +21,20 @@ export class EventsService {
     });
   }
 
+  async findAllByOrganizer(organizerId: string) {
+    return this.prisma.event.findMany({
+      where: { 
+      organizerId // Filtra apenas os eventos deste organizador
+      },
+    include: { 
+      organizer: { select: { name: true } } 
+      },
+    orderBy: { 
+      createdAt: 'desc' // Mostra os mais recentes primeiro
+      },
+    });
+  }
+
   async findOne(id: string) {
     const event = await this.prisma.event.findUnique({ where: { id } });
     if (!event) throw new NotFoundException('Evento não encontrado');

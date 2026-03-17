@@ -7,15 +7,23 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
-  @Get() // Público: qualquer um vê a lista de eventos
+  // Rota para ver APENAS os meus eventos
+  @UseGuards(JwtAuthGuard)
+  @Get('me') 
+  findMyEvents(@Request() req) {
+    // Chamando o método no Service
+    return this.eventsService.findAllByOrganizer(req.user.sub);
+  }
+
+  // Rota pública para ver TODOS os eventos (Feed)
+  @Get()
   findAll() {
     return this.eventsService.findAll();
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post() // Protegido: precisa de login
+  @Post()
   create(@Body() dto: CreateEventDto, @Request() req) {
-    // O organizerId vem do token JWT (req.user.sub)
     return this.eventsService.create(dto, req.user.sub);
   }
 
