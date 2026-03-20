@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Patch } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UpdateEventDto } from './dto/update-event.dto';
 
 @Controller('events')
 export class EventsController {
@@ -20,6 +21,12 @@ export class EventsController {
   findAll() {
     return this.eventsService.findAll();
   }
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  remove(@Param('id') id: string, @Request() req) {
+  // req.user contém o que retorna na JwtStrategy: { sub, email, role }
+    return this.eventsService.remove(id, req.user.sub, req.user.role);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -30,5 +37,15 @@ export class EventsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.eventsService.findOne(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateEventDto,
+    @Request() req,
+  ) {
+  return this.eventsService.update(id, dto, req.user.sub, req.user.role);
   }
 }
