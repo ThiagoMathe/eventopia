@@ -1,14 +1,22 @@
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-
-// Carrega o .env da pasta apps/api de forma absoluta
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
-
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Remove campos do JSON que não estão no DTO (Segurança)
+      forbidNonWhitelisted: true, // Retorna erro se tentarem enviar campos extras
+      transform: true, // Converte tipos automaticamente (ex: string para número ou data)
+    }),
+  );
+
   await app.listen(3000);
   console.log('🚀 Eventopia API rodando em: http://localhost:3000');
 }
