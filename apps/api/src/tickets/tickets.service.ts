@@ -5,6 +5,10 @@ import { UpdateTicketDto } from './dto/update-ticket.dto';
 
 @Injectable()
 export class TicketsService {
+  // Retorna todos os tickets do banco
+  async findAll() {
+    return this.prisma.ticket.findMany();
+  }
   constructor(private prisma: PrismaService) {}
 
   private async validateOwnership(ticketId: string, userId: string, userRole: string) {

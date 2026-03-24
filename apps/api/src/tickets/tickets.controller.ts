@@ -34,4 +34,15 @@ export class TicketsController {
   remove(@Param('id') id: string, @Request() req) {
     return this.ticketsService.remove(id, req.user.sub, req.user.role);
 }
+
+  @Get()
+    findAll() {
+      return this.ticketsService.findAll();
+    }
+
+  // Listar tickets de um evento específico
+  @Get('event/:eventId')
+  findByEvent(@Param('eventId') eventId: string) {
+    return this.ticketsService.findAllByEvent(eventId);
+  }
 }
