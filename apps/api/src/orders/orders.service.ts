@@ -39,24 +39,22 @@ export class OrdersService {
 
       for (const item of dto.items) {
         // busca do ticket e validação de estoque
-
         const ticket = await tx.ticket.findUnique({
           where: { id: item.ticketId },
         });
 
         if (!ticket || ticket.quantity < item.quantity) {
           throw new BadRequestException(`Estoque insuficiente para: ${ticket?.name}`);
-      }
+        }
 
-        // 2. Lógica de preço (já está lá)
         totalPrice += Number(ticket.price) * item.quantity;
 
-        // 3. Atualização do estoque (depois de validar tudo)
+        // Atualização do estoque (depois de validar tudo)
         await tx.ticket.update({
           where: { id: item.ticketId },
           data: {
           quantity: {
-          decrement: item.quantity, // <--- Aqui o Prisma subtrai do banco de forma segura
+          decrement: item.quantity, // Prisma subtrai do banco de forma segura
             },
           },
         });
@@ -84,6 +82,51 @@ export class OrdersService {
       });
 
       return order;
+    });
+  }
+
+  async updateStatus(id: string, status: 'PAID' | 'CANCELLED') {
+    // Busca o pedido para verificar se ele existe e qual o status atual
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { orderTickets: true }, // Precisamos dos itens para devolver ao estoque se cancelar
+    });
+
+    if (!order) {
+      throw new BadRequestException('Pedido não encontrado.');
+    }
+
+    if (order.status !== 'PENDING') {
+      throw new BadRequestException('Apenas pedidos PENDENTES podem ter o status alterado.');
+    }
+
+    // Se o novo status for CANCELADO, devolvemos os itens para o estoque
+    if (status === 'CANCELLED') {
+      return this.prisma.$transaction(async (tx) => {
+        // Para cada ingresso que estava no pedido, somamos de volta no Ticket original
+        for (const item of order.orderTickets) {
+          await tx.ticket.update({
+            where: { id: item.ticketId },
+            data: {
+              quantity: {
+                increment: 1, // Devolvemos 1 por 1 conforme a lista de ingressos gerados
+              },
+            },
+          });
+        }
+
+        // Atualizamos o status do pedido para CANCELADO
+        return tx.order.update({
+          where: { id },
+          data: { status: 'CANCELLED' },
+        });
+      });
+    }
+
+    // Se o status for PAGO, apenas atualizamos o registro
+    return this.prisma.order.update({
+      where: { id },
+      data: { status: 'PAID' },
     });
   }
 }
