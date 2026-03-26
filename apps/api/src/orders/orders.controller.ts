@@ -23,8 +23,8 @@ export class OrdersController {
     return this.ordersService.findAllByUser(req.user.sub);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard) // Certifique-se de que há uma vírgula entre os Guards
-  @Roles(Role.ADMIN) // <--- O "@" É OBRIGATÓRIO AQUI
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id/status')
   updateStatus(
     @Param('id') id: string,
