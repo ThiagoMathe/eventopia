@@ -129,4 +129,32 @@ export class OrdersService {
       data: { status: 'PAID' },
     });
   }
+
+
+
+  async getAdminStats() {
+    // Somar o totalPrice de todos os pedidos PAGOS
+    const revenue = await this.prisma.order.aggregate({
+      _sum: {
+        totalPrice: true,
+      },
+      where: {
+        status: 'PAID',
+      },
+    });
+
+    // Contar quantos ingressos individuais (OrderTickets) foram vendidos em pedidos PAGOS
+    const ticketsSold = await this.prisma.orderTicket.count({
+      where: {
+        order: {
+          status: 'PAID',
+        },
+      },
+    });
+
+    return {
+      totalRevenue: revenue._sum.totalPrice || 0,
+      totalTicketsSold: ticketsSold,
+    };
+  }
 }

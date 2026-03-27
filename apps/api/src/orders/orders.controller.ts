@@ -32,5 +32,11 @@ export class OrdersController {
   ) {
     return this.ordersService.updateStatus(id, status);
   }
-}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Get('admin/stats')
+  getStats() {
+    return this.ordersService.getAdminStats();
+  }
+}
