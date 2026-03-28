@@ -95,6 +95,7 @@ model OrderTicket {
   orderId   String  @map("order_id")
   ticketId  String  @map("ticket_id")
   qrCode    String  @unique @map("qr_code")
+  usedAt    DateTime? // Se estiver nulo, não foi usado. Se tiver data, já entrou.
 
   // Relações
   order     Order   @relation(fields: [orderId], references: [id])

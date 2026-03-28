@@ -39,4 +39,15 @@ export class OrdersController {
   getStats() {
     return this.ordersService.getAdminStats();
   }
+ 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.ORGANIZER) // Apenas quem trabalha no evento
+  @Patch('check-in')
+  doCheckIn(
+    @Body('qrCode') qrCode: string,
+    @Request() req
+  ) {
+    // req.user vem do JWT (contém id e role)
+    return this.ordersService.checkIn(qrCode, req.user.sub, req.user.role);
+  }
 }

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -156,5 +156,43 @@ export class OrdersService {
       totalRevenue: revenue._sum.totalPrice || 0,
       totalTicketsSold: ticketsSold,
     };
+  }
+  
+  async checkIn(qrCode: string, userId: string, userRole: string) {
+    // Busca o ingresso e traz dados do evento para validar permissões
+    const orderTicket = await this.prisma.orderTicket.findUnique({
+      where: { qrCode },
+      include: {
+        order: true,
+        ticket: {
+          include: { event: true }
+        }
+      }
+    });
+
+    if (!orderTicket) {
+      throw new NotFoundException('Ingresso não encontrado ou inválido.');
+    }
+
+    // Só entra se estiver PAGO
+    if (orderTicket.order.status !== 'PAID') {
+      throw new BadRequestException('Não é possível fazer check-in de um pedido pendente ou cancelado.');
+    }
+
+    // Validação de fraude: Já foi usado?
+    if (orderTicket.usedAt) {
+      throw new BadRequestException(`Este ingresso já foi utilizado em: ${orderTicket.usedAt.toLocaleString()}`);
+    }
+
+    // Segurança de cargo: Organizador só valida os PRÓPRIOS eventos
+    if (userRole === 'ORGANIZER' && orderTicket.ticket.event.organizerId !== userId) {
+      throw new ForbiddenException('Você não tem permissão para validar ingressos de outros organizadores.');
+    }
+
+    // Marca a data de uso
+    return this.prisma.orderTicket.update({
+      where: { qrCode },
+      data: { usedAt: new Date() },
+    });
   }
 }
