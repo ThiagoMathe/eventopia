@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { FindEventsDto } from './dto/find-events.dto';
 
 @Injectable()
 export class EventsService {
@@ -16,9 +17,27 @@ export class EventsService {
     });
   }
 
-  async findAll() {
+  async findAll(filters: FindEventsDto) {
+    const { search, city, category } = filters;
+
     return this.prisma.event.findMany({
-      include: { organizer: { select: { name: true } } }, // Traz o nome do dono
+      where: {
+        // Busca textual no Título OU Descrição
+        OR: search ? [
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ] : undefined,
+
+        // Usamos 'location' (do Prisma) recebendo o valor de 'city' (do DTO)
+        location: city ? { contains: city, mode: 'insensitive' } : undefined,
+      },
+      include: { 
+        organizer: { select: { name: true } }, 
+        tickets: true, 
+      },
+      orderBy: { 
+        date: 'asc' 
+      },
     });
   }
 

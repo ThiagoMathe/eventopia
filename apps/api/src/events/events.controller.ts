@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Patch, Query } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { FindEventsDto } from './dto/find-events.dto';
 
 @Controller('events')
 export class EventsController {
@@ -16,11 +17,11 @@ export class EventsController {
     return this.eventsService.findAllByOrganizer(req.user.sub);
   }
 
-  // Rota pública para ver TODOS os eventos (Feed)
   @Get()
-  findAll() {
-    return this.eventsService.findAll();
+  findAll(@Query() filters: FindEventsDto = {}) {
+    return this.eventsService.findAll(filters);
   }
+
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req) {
