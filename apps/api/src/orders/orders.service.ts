@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { randomBytes } from 'crypto';
@@ -29,7 +30,10 @@ export class OrdersService {
       },
     });
   }
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   async create(dto: CreateOrderDto, userId: string) {
     return this.prisma.$transaction(async (tx) => {
@@ -86,36 +90,28 @@ export class OrdersService {
   }
 
   async updateStatus(id: string, status: 'PAID' | 'CANCELLED') {
-    // Busca o pedido para verificar se ele existe e qual o status atual
+    // Busca o pedido com os relacionamentos necessários
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { orderTickets: true }, // Precisamos dos itens para devolver ao estoque se cancelar
+      include: { 
+        orderTickets: true, 
+        user: { select: { name: true, phone: true } } // Pegamos o telefone do usuário aqui
+      },
     });
 
-    if (!order) {
-      throw new BadRequestException('Pedido não encontrado.');
-    }
-
+    if (!order) throw new BadRequestException('Pedido não encontrado.');
     if (order.status !== 'PENDING') {
       throw new BadRequestException('Apenas pedidos PENDENTES podem ter o status alterado.');
     }
 
-    // Se o novo status for CANCELADO, devolvemos os itens para o estoque
     if (status === 'CANCELLED') {
       return this.prisma.$transaction(async (tx) => {
-        // Para cada ingresso que estava no pedido, somamos de volta no Ticket original
         for (const item of order.orderTickets) {
           await tx.ticket.update({
             where: { id: item.ticketId },
-            data: {
-              quantity: {
-                increment: 1, // Devolvemos 1 por 1 conforme a lista de ingressos gerados
-              },
-            },
+            data: { quantity: { increment: 1 } },
           });
         }
-
-        // Atualizamos o status do pedido para CANCELADO
         return tx.order.update({
           where: { id },
           data: { status: 'CANCELLED' },
@@ -123,14 +119,35 @@ export class OrdersService {
       });
     }
 
-    // Se o status for PAGO, apenas atualizamos o registro
-    return this.prisma.order.update({
-      where: { id },
-      data: { status: 'PAID' },
-    });
+    // LÓGICA PARA PAGAMENTO
+    if (status === 'PAID') {
+      const updatedOrder = await this.prisma.order.update({
+        where: { id },
+        data: { status: 'PAID' },
+        include: { 
+          user: true,
+          orderTickets: {
+            include: {
+              ticket: {
+                include: {
+                  event: true // Pegamos o evento para saber o título e a data
+                }
+              }
+            }
+          },
+        }
+      });
+
+      // Disparamos o evento para o módulo de comunicação (WhatsApp)
+      // Isso acontece de forma assíncrona, não trava o retorno da API!
+      this.eventEmitter.emit('order.paid', {
+        order: updatedOrder,
+        userPhone: updatedOrder.user.phone,
+      });
+
+      return updatedOrder;
+    }
   }
-
-
 
   async getAdminStats() {
     // Somar o totalPrice de todos os pedidos PAGOS
