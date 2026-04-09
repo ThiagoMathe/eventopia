@@ -14,6 +14,9 @@ export class WhatsappService implements OnModuleInit {
     try {
       this.client = await wppconnect.create({
         session: 'eventopia-session',
+        puppeteerOptions: {
+          args: ['--no-sandbox', '--disable-setuid-sandbox'], // Obrigatório para Docker
+        },
       });
       this.logger.log('WhatsApp conectado!');
     } catch (error) {
