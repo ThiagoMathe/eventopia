@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   database:
     image: postgres:15-alpine
@@ -13,6 +11,38 @@ services:
       - "5432:5432"
     volumes:
       - eventopia_postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./apps/api 
+      dockerfile: Dockerfile 
+    container_name: eventopia_api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?schema=public
+      PORT: 3000
+    depends_on:
+      - database
+    volumes:
+      - ./apps/api/tokens:/app/tokens # Mapeia a pasta de tokens para persistir os tokens gerados
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: eventopia_web
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
 
 volumes:
   eventopia_postgres_data:
