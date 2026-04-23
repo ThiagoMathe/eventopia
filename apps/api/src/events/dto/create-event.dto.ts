@@ -10,6 +10,10 @@ export class CreateEventDto {
   @IsNotEmpty({ message: 'A descrição não pode estar vazia.' })
   description: string;
 
+  @IsString()
+  @IsNotEmpty()
+  category: string;
+
   @Type(() => Date) // Converte a string do JSON para um objeto Date
   @IsDate({ message: 'A data deve ser um formato válido.' })
   @MinDate(new Date(), { message: 'A data do evento não pode ser no passado.' })

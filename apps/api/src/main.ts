@@ -16,6 +16,8 @@ async function bootstrap() {
       transform: true, // Converte tipos automaticamente (ex: string para número ou data)
     }),
   );
+  
+  app.enableCors();
 
   await app.listen(3000);
   console.log('🚀 Eventopia API rodando em: http://localhost:3000');

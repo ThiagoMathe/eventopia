@@ -49,6 +49,7 @@ model Event {
   id          String   @id @default(cuid())
   title       String
   description String   @db.Text
+  category    String
   date        DateTime
   location    String
   image       String?
