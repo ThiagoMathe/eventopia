@@ -1,74 +1,109 @@
-import { useState } from 'react';
-import { login } from '../services/auth';
+import { useEffect, useState } from 'react';
+import { signIn } from '../services/auth';
+import { useNavigate } from 'react-router-dom';
 
-function App() {
+export default function Login() {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+      const token = localStorage.getItem('eventopia_token');
+      if (token) {
+        navigate('/'); // Se já tem token, tchau login!
+      }
+    }, [navigate]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      await login(email, password);
-      alert('Login realizado com sucesso! Token salvo.');
-      // No futuro, aqui faremos o redirecionamento para /dashboard
+      await signIn(email, password);
+      // O '/' leva para a home (catálogo)
+      navigate('/'); 
+      
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao realizar login. Verifique suas credenciais.');
+      setError(
+        err.response?.data?.message || 
+        'Erro ao realizar login. Verifique suas credenciais.'
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Eventopia</h1>
-          <p className="text-slate-400">Acesse sua conta administrativa</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">E-mail</label>
-            <input
-              type="email"
-              required
-              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              placeholder="exemplo@ifpb.edu.br"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 px-4">
+      <div className="w-full max-w-md">
+        
+        <form 
+          onSubmit={handleSubmit} 
+          className="space-y-6 bg-zinc-900 p-8 rounded-2xl border border-white/5 shadow-2xl"
+        >
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-white">Bem-vindo de volta</h2>
+            <p className="text-zinc-400 mt-2">Entre na sua conta Eventopia</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Senha</label>
-            <input
-              type="password"
-              required
-              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
-          {error && <p className="text-red-400 text-sm text-center bg-red-400/10 py-2 rounded">{error}</p>}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-1.5">E-mail</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+                placeholder="seu@email.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-1.5">Senha</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-linear-to-r from-indigo-500 to-cyan-500 py-3 rounded-xl text-white font-bold shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Entrando...' : 'Acessar Painel'}
+            {isLoading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm text-zinc-500">
+            Ainda não tem uma conta?{' '}
+            <button 
+              type="button"
+              onClick={() => navigate('/register')} 
+              className="text-cyan-400 font-semibold hover:text-cyan-300 transition-colors"
+            >
+              Cadastre-se agora
+            </button>
+          </p>
+        </div>
+
       </div>
     </div>
-  );
-}
-
-export default App;
+  );}

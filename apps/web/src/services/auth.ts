@@ -1,11 +1,30 @@
-import { api } from './api';
+import axios from 'axios';
 
-export const login = async (email: string, password: string) => {
-  const { data } = await api.post('/auth/signin', { email, password });
+const api = axios.create({
+  baseURL: 'http://localhost:3000',
+});
+
+export const signUp = async (name: string, email: string, password: string, phone: string) => {
+  const response = await api.post('/auth/signup', { 
+    name, 
+    email, 
+    password, 
+    phone 
+  });
   
-  if (data.access_token) {
-    localStorage.setItem('eventopia_token', data.access_token);
+  if (response.data.access_token) {
+    localStorage.setItem('eventopia_token', response.data.access_token);
   }
   
-  return data;
+  return response.data;
+};
+
+export const signIn = async (email: string, password: string) => {
+  const response = await api.post('/auth/signin', { email, password });
+  
+  if (response.data.access_token) {
+    localStorage.setItem('eventopia_token', response.data.access_token);
+  }
+  
+  return response.data;
 };

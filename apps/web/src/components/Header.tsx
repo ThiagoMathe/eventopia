@@ -1,4 +1,4 @@
-import { Search, LogIn } from 'lucide-react';
+import { Search, LogIn, LogOut } from 'lucide-react'; // Adicionei o LogOut
 import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
@@ -8,6 +8,16 @@ interface HeaderProps {
 
 export default function Header({ searchTerm, onSearchChange }: HeaderProps) {
   const navigate = useNavigate();
+  
+  // Verificamos se o usuário está logado
+  const isAuthenticated = !!localStorage.getItem('eventopia_token');
+
+  // Função para deslogar
+  const handleLogout = () => {
+    localStorage.removeItem('eventopia_token');
+    navigate('/login');
+    window.location.reload(); // Recarrega para limpar estados globais se necessário
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/60 backdrop-blur-xl">
@@ -29,13 +39,24 @@ export default function Header({ searchTerm, onSearchChange }: HeaderProps) {
           />
         </div>
 
-        <button
-          onClick={() => navigate('/login')}
-          className="flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-cyan-500/30 hover:bg-white/10 hover:text-zinc-100"
-        >
-          <LogIn className="h-4 w-4" />
-          <span className="hidden sm:inline">Entrar</span>
-        </button>
+        {/* Renderização Condicional do Botão*/}
+        {isAuthenticated ? (
+          <button
+            onClick={handleLogout}
+            className="flex shrink-0 items-center gap-2 rounded-full border border-red-500/15 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:border-red-500/30 hover:bg-red-500/10"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Sair</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate('/login')}
+            className="flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-cyan-500/30 hover:bg-white/10 hover:text-zinc-100"
+          >
+            <LogIn className="h-4 w-4" />
+            <span className="hidden sm:inline">Entrar</span>
+          </button>
+        )}
       </div>
     </header>
   );
