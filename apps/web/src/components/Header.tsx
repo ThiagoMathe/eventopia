@@ -1,5 +1,6 @@
-import { Search, LogIn, LogOut } from 'lucide-react'; // Adicionei o LogOut
+import { Search, LogIn, LogOut, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getUserPayload } from '.././utils/auth';
 
 interface HeaderProps {
   searchTerm: string;
@@ -11,6 +12,10 @@ export default function Header({ searchTerm, onSearchChange }: HeaderProps) {
   
   // Verificamos se o usuário está logado
   const isAuthenticated = !!localStorage.getItem('eventopia_token');
+
+  // Lógica para verificar se o usuário pode criar eventos
+  const user = getUserPayload();
+  const canCreateEvent = user && (user.role === 'ORGANIZER' || user.role === 'ADMIN');
 
   // Função para deslogar
   const handleLogout = () => {
@@ -39,24 +44,40 @@ export default function Header({ searchTerm, onSearchChange }: HeaderProps) {
           />
         </div>
 
-        {/* Renderização Condicional do Botão*/}
-        {isAuthenticated ? (
-          <button
-            onClick={handleLogout}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-red-500/15 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:border-red-500/30 hover:bg-red-500/10"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Sair</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => navigate('/login')}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-cyan-500/30 hover:bg-white/10 hover:text-zinc-100"
-          >
-            <LogIn className="h-4 w-4" />
-            <span className="hidden sm:inline">Entrar</span>
-          </button>
-        )}
+        {/* Grupo de ações à direita para manter o alinhamento do Flexbox */}
+        <div className="flex items-center gap-4">
+          
+          {/* Botão dinâmico de Criar Evento */}
+          {canCreateEvent && (
+            <button
+              onClick={() => navigate('/events/create')}
+              className="flex items-center gap-1.5 rounded-full bg-linear-to-r from-indigo-500 to-cyan-500 px-4 py-2 text-sm font-medium text-white shadow-md shadow-cyan-500/10 hover:brightness-110 active:scale-[0.98] transition-all"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden md:inline">Criar Evento</span>
+            </button>
+          )}
+
+          {/* Renderização Condicional do Botão de Autenticação */}
+          {isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className="flex shrink-0 items-center gap-2 rounded-full border border-red-500/15 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:border-red-500/30 hover:bg-red-500/10"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-cyan-500/30 hover:bg-white/10 hover:text-zinc-100"
+            >
+              <LogIn className="h-4 w-4" />
+              <span className="hidden sm:inline">Entrar</span>
+            </button>
+          )}
+        </div>
+
       </div>
     </header>
   );
